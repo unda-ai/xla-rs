@@ -327,12 +327,12 @@ xla_op op_min(const xla_op lhs, const xla_op rhs) {
 
 xla_op op_conv(const xla_op lhs, const xla_op rhs,
         const int64_t* window_strides, size_t window_size,
-        const int64_t* padding, size_t padding_size,
+        const int64_t* padding, size_t padding_size, int_64_t interior_padding,
         int_64_t feature_group_count, int_64_t batch_group_count) {
   BEGIN_PROTECT_OP
   return new XlaOp(Conv(*lhs, *rhs, 
               absl::Span<const int64_t>(window_strides, window_size),
-              {TODO PADDING INITIALIZATION}, feature_group_count, batch_group_count
+              Padding {.dimensions = {padding, padding_size} .interior_padding = interior_padding}, feature_group_count, batch_group_count
               ));
   END_PROTECT_OP(lhs)
 }

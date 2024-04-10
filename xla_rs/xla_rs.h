@@ -106,7 +106,7 @@ xla_op op_or(const xla_op, const xla_op);
 xla_op op_xor(const xla_op, const xla_op);
 xla_op op_atan2(const xla_op, const xla_op);
 xla_op op_conv(const xla_op, const xla_op, const int64_t *, size_t, 
-        int64_t *, size_t, int64_t, int64_t);
+        int64_t *, size_t, int64_t, int64_t, int64_t);
 xla_op op_pow(const xla_op, const xla_op);
 xla_op op_dot(const xla_op, const xla_op);
 xla_op op_dot_general(const xla_op, const xla_op, const int64_t *, size_t,

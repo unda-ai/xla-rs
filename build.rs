@@ -58,17 +58,29 @@ fn env_var_rerun(name: &str) -> Option<String> {
 
 fn main() {
     let os = OS::get();
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR is not set");
+
+    let xla_dir = PathBuf::from(manifest_dir).join("xla_extension");
+
+    if !xla_dir.exists() {
+        panic!("The xla_extension library was not found in the expected path: {}", xla_dir.display());
+    }
+
+    println!("cargo:rustc-link-search=native={}", xla_dir.display());
+    println!("cargo:rerun-if-changed={}", xla_dir.display());
     let xla_lib = env::var("CARGO_MANIFEST_DIR").expect("Cargo manifest dir not set");
     println!("{}", xla_lib);
     let xla_dir = PathBuf::from(xla_lib + "/xla_extension");
 
     println!("cargo:rerun-if-changed=xla_rs/xla_rs.h");
     println!("cargo:rerun-if-changed=xla_rs/xla_rs.cc");
+
     let bindings = bindgen::Builder::default()
         .header("xla_rs/xla_rs.h")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .generate()
         .expect("Unable to generate bindings");
+
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     bindings.write_to_file(out_path.join("c_xla.rs")).expect("Couldn't write bindings!");
 

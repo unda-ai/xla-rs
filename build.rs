@@ -58,7 +58,9 @@ fn env_var_rerun(name: &str) -> Option<String> {
 
 fn main() {
     let os = OS::get();
-    let xla_dir = PathBuf::from("./xla_extension");
+    let xla_lib = env::var("CARGO_MANIFEST_DIR").expect("Cargo manifest dir not set");
+    println!("{}", xla_lib);
+    let xla_dir = PathBuf::from(xla_lib + "/xla_extension");
 
     println!("cargo:rerun-if-changed=xla_rs/xla_rs.h");
     println!("cargo:rerun-if-changed=xla_rs/xla_rs.cc");

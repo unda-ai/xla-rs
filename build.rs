@@ -58,9 +58,7 @@ fn env_var_rerun(name: &str) -> Option<String> {
 
 fn main() {
     let os = OS::get();
-    let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR is not set");
-
-    let xla_dir = PathBuf::from(manifest_dir).join("xla_extension");
+    let xla_dir = PathBuf::from(env::var("XLA_EXTENSION_DIR").expect("XLA_EXTENSION_DIR Not set up :("));
 
     if !xla_dir.exists() {
         panic!("The xla_extension library was not found in the expected path: {}", xla_dir.display());

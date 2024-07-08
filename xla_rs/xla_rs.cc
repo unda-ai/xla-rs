@@ -325,6 +325,21 @@ xla_op op_min(const xla_op lhs, const xla_op rhs) {
   END_PROTECT_OP(lhs)
 }
 
+xla_op op_conv(const xla_op lhs, const xla_op rhs,
+               const int64_t* window_strides,
+               size_t window_size,
+               bool same_padding,
+               int64_t feature_group_count,
+               int64_t batch_group_count) {
+  BEGIN_PROTECT_OP
+  auto padding = same_padding ? Padding::kSame : Padding::kValid;
+  return new XlaOp(Conv(*lhs, *rhs,
+              absl::Span<const int64_t>(window_strides, window_size),
+              padding, feature_group_count, batch_group_count
+              ));
+  END_PROTECT_OP(lhs)
+}
+
 xla_op op_and(const xla_op lhs, const xla_op rhs) {
   BEGIN_PROTECT_OP
   return new XlaOp(And(*lhs, *rhs));

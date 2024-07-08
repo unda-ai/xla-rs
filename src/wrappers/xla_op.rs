@@ -5,14 +5,18 @@
 //!
 //! For details on the semantics, see
 //! [operation_semantics](https://www.tensorflow.org/xla/operation_semantics).
-use std::thread::Builder;
-
 use super::{ArrayShape, PrimitiveType, Shape, XlaBuilder, XlaComputation};
 use crate::{c_lib, ElementType, Error, Result};
 
 pub struct XlaOp {
     pub(super) op: c_lib::xla_op,
     pub(super) builder: XlaBuilder,
+}
+
+#[derive(PartialEq, Eq)]
+pub enum ConvPadding {
+    SamePadding,
+    ValidPadding,
 }
 
 macro_rules! extract_dims {
@@ -125,6 +129,28 @@ impl XlaOp {
     /// This computes the element-wise SiLU activation, x.sigmoid(x).
     pub fn silu(&self) -> Result<Self> {
         self * self.logistic()
+    }
+
+    pub fn conv(
+        &self,
+        rhs: &XlaOp,
+        strides: Vec<i64>,
+        padding: ConvPadding,
+        feature_group_count: i64,
+        batch_group_count: i64,
+    ) -> Result<Self> {
+        let op = unsafe {
+            c_lib::op_conv(
+                self.op,
+                rhs.op,
+                strides.as_ptr(),
+                strides.len(),
+                padding == ConvPadding::SamePadding,
+                feature_group_count,
+                batch_group_count
+            )
+        };
+        self.wrap(op)
     }
 
     /// A node that applies the specified Einstein summation formula to this node.
@@ -551,9 +577,7 @@ impl XlaOp {
 
         let zero_vec: Vec<u32> = (0..out_shape.iter().product()).map(|_| 0u32).collect();
         let zeroes_r1 = self.builder.constant_r1(zero_vec.as_slice())?;
-        let zeroes = zeroes_r1
-                           .convert(ty.primitive_type())?
-                           .reshape(out_shape.as_slice())?;
+        let zeroes = zeroes_r1.convert(ty.primitive_type())?.reshape(out_shape.as_slice())?;
 
         let ones_vec: Vec<u32> = (0..in_len).map(|_| 1u32).collect();
         let ones_u32 = self.builder.constant_r1(ones_vec.as_slice())?;
@@ -568,15 +592,7 @@ impl XlaOp {
         let range = self.builder.constant_r1(range_vec.as_slice())?.reshape(&[1, in_len])?;
         let indices = range.concat_in_dim(&[self.reshape(&[1, in_len])?], 0)?;
 
-        zeroes.scatter(&indices,
-                       &ones,
-                       &comp,
-                       &[1, 2],
-                       &[],
-                       &[0, 1],
-                       Some(0),
-                       false,
-                       false)
+        zeroes.scatter(&indices, &ones, &comp, &[1, 2], &[], &[0, 1], Some(0), false, false)
     }
 
     pub fn take(&self, indices: &XlaOp, axis: i64) -> Result<Self> {
